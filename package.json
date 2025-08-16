@@ -3,7 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "description": "Advanced pharmaceutical trade data analytics platform with AI-powered insights",
-  "keywords": ["pharmaceutical", "trade-data", "analytics", "nextjs", "mongodb", "prisma"],
+  "keywords": [
+    "pharmaceutical",
+    "trade-data",
+    "analytics",
+    "nextjs",
+    "mongodb",
+    "prisma"
+  ],
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "prisma generate && next build",

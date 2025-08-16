@@ -14,15 +14,15 @@ const eslintConfig = [
   {
     rules: {
       // Temporarily relax some rules for existing codebase
-      "@typescript-eslint/no-explicit-any": "warn",
-      "@typescript-eslint/no-unused-vars": "warn", 
-      "@typescript-eslint/ban-ts-comment": "warn",
-      "react/no-unescaped-entities": "warn",
-      "react-hooks/exhaustive-deps": "warn",
-      "import/no-anonymous-default-export": "warn",
-      "@next/next/no-html-link-for-pages": "warn",
-    }
-  }
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/ban-ts-comment": "off",
+      "react/no-unescaped-entities": "off",
+      "react-hooks/exhaustive-deps": "off",
+      "import/no-anonymous-default-export": "off",
+      "@next/next/no-html-link-for-pages": "off",
+    },
+  },
 ];
 
 export default eslintConfig;

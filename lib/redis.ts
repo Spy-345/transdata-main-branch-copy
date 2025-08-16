@@ -1,42 +1,25 @@
-import { Redis } from "ioredis";
+import { createClient } from "redis";
 
-// Redis configuration
-const redisConfig = {
-  host: process.env.REDIS_HOST || "localhost",
-  port: parseInt(process.env.REDIS_PORT || "6379"),
-  password: process.env.REDIS_PASSWORD,
-  db: parseInt(process.env.REDIS_DB || "0"),
-  retryDelayOnFailover: 100,
-  maxRetriesPerRequest: 3,
-  lazyConnect: true,
-  keepAlive: 30000,
-  connectTimeout: 10000,
-  commandTimeout: 5000,
-};
+const redis = await createClient({
+  url: process.env.STORAGE_REDIS_URL,
+}).connect();
 
-// Create Redis client
-let redis: Redis | null = null;
-
-export function getRedisClient(): Redis {
-  if (!redis) {
-    redis = new Redis(redisConfig);
-
-    redis.on("error", (error) => {
-      console.error("❌ Redis connection error:", error);
-    });
-
-    redis.on("connect", () => {});
-
-    redis.on("ready", () => {});
+export function getRedisClient() {
+  if (redis.isOpen) {
+    return redis;
+  } else {
+    console.error("❌ Redis connection error:", redis.isOpen);
+    return null;
   }
-
-  return redis;
 }
 
 // Cache utility functions
 export async function getCachedData<T>(key: string): Promise<T | null> {
   try {
     const client = getRedisClient();
+    if (!client) {
+      return null;
+    }
     const data = await client.get(key);
     return data ? JSON.parse(data) : null;
   } catch (error) {
@@ -52,7 +35,10 @@ export async function setCachedData<T>(
 ): Promise<void> {
   try {
     const client = getRedisClient();
-    await client.setex(key, ttlSeconds, JSON.stringify(data));
+    if (!client) {
+      return;
+    }
+    await client.set(key, JSON.stringify(data), { EX: ttlSeconds });
   } catch (error) {
     console.error("❌ Redis set error:", error);
   }
@@ -61,6 +47,9 @@ export async function setCachedData<T>(
 export async function deleteCachedData(key: string): Promise<void> {
   try {
     const client = getRedisClient();
+    if (!client) {
+      return;
+    }
     await client.del(key);
   } catch (error) {
     console.error("❌ Redis delete error:", error);
@@ -70,9 +59,12 @@ export async function deleteCachedData(key: string): Promise<void> {
 export async function clearCache(pattern: string = "*"): Promise<void> {
   try {
     const client = getRedisClient();
+    if (!client) {
+      return;
+    }
     const keys = await client.keys(pattern);
     if (keys.length > 0) {
-      await client.del(...keys);
+      await client.del(keys);
     }
   } catch (error) {
     console.error("❌ Redis clear cache error:", error);
@@ -95,6 +87,9 @@ export function generateCacheKey(
 export async function checkRedisHealth(): Promise<boolean> {
   try {
     const client = getRedisClient();
+    if (!client) {
+      return false;
+    }
     await client.ping();
     return true;
   } catch (error) {

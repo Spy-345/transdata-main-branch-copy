@@ -192,7 +192,7 @@ export async function GET(request: NextRequest) {
     // Use optimized database query with aggregation pipeline
     // const dbQueryStartTime = Date.now();
 
-    console.log("🚀 Using optimized aggregation pipeline...");
+    // console.log("🚀 Using optimized aggregation pipeline...");
     let records: Record<string, unknown>[] = [];
 
     try {

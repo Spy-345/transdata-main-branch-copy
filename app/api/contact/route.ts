@@ -1,49 +1,76 @@
-import { NextResponse } from "next/server"
-import { z } from "zod"
-import { prisma } from "@/lib/prisma"
-import nodemailer from "nodemailer"
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { prisma } from "@/lib/prisma";
+import nodemailer from "nodemailer";
+import { sendCustomerConfirmationEmail } from "@/lib/email-utils";
 
 const contactFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
   organization: z.string().optional(),
   contact: z.string().optional(),
-  message: z.string().min(10, "Message must be at least 10 characters"),
-})
+  message: z.string(),
+});
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json()
-    
-    // Validate request body
-    const validatedData = contactFormSchema.parse(body)
-    const { name, email, organization, contact, message } = validatedData
+    const body = await req.json();
 
-    console.log("Attempting to save contact form data:", { name, email, organization, contact, message })
+    // Validate request body
+    const validatedData = contactFormSchema.parse(body);
+    const { name, email, organization, contact, message } = validatedData;
+
+    console.log("Attempting to save contact form data:", {
+      name,
+      email,
+      organization,
+      contact,
+      message,
+    });
 
     // Save to database
     await prisma.contactForm.create({
       data: { name, email, organization, contact, message },
-    })
+    });
 
-    console.log("Contact form data saved successfully")
+    console.log("Contact form data saved successfully");
 
     // Send email notification (optional - only if email config is available)
     if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-      try {
-        const transporter = nodemailer.createTransport({
-          host: "smtpout.secureserver.net",
-          port: 465,
-          secure: true,
-          auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-          },
-        })
+      // Create transporter for email sending
+      const transporter = nodemailer.createTransport({
+        host: "smtpout.secureserver.net",
+        port: 465,
+        secure: true,
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+      });
 
-        await transporter.sendMail({
+      // Send customer confirmation email
+      try {
+        await sendCustomerConfirmationEmail(transporter, {
+          name,
+          email,
+          organization,
+          contact,
+          message,
+        });
+        console.log("Customer confirmation email sent successfully");
+      } catch (customerEmailError) {
+        console.error(
+          "Customer confirmation email failed:",
+          customerEmailError
+        );
+        // Continue execution even if customer email fails
+      }
+
+      // Send internal notification email
+      try {
+        const mailInfo = await transporter.sendMail({
           from: `"TransData Site Contact" <${process.env.EMAIL_USER}>`,
-          to: "komal@transdatanexus.com",
+          to: process.env.EMAIL_TO,
           subject: `New Enquiry from ${name}`,
           html: `
             <div style="max-width:480px;margin:24px auto;padding:24px;background:#f8fafc;border-radius:16px;box-shadow:0 4px 24px rgba(30,64,175,0.08);font-family:Segoe UI,Arial,sans-serif;">
@@ -80,46 +107,49 @@ export async function POST(req: Request) {
               </div>
             </div>
           `,
-        })
+        });
+        console.log("Email sent successfully:", mailInfo.messageId);
       } catch (emailError) {
-        console.error("Email sending failed:", emailError)
+        console.error("Email sending failed:", emailError);
         // Continue execution even if email fails
       }
     } else {
-      console.log("Email configuration not available - skipping email notification")
+      console.log(
+        "Email configuration not available - skipping email notification"
+      );
     }
 
-    return NextResponse.json({ success: true }, { status: 201 })
+    return NextResponse.json({ success: true }, { status: 201 });
   } catch (error: unknown) {
-    console.error("Contact API Error:", error)
-    
+    console.error("Contact API Error:", error);
+
     // Handle validation errors
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: "Invalid form data. Please check your inputs." },
         { status: 400 }
-      )
+      );
     }
-    
+
     // Handle database connection errors
     if (error instanceof Error && error.message.includes("connect")) {
       return NextResponse.json(
         { error: "Database connection error. Please try again later." },
         { status: 503 }
-      )
+      );
     }
-    
+
     // Handle Prisma errors
     if (error instanceof Error && error.message.includes("prisma")) {
       return NextResponse.json(
         { error: "Database error. Please try again later." },
         { status: 500 }
-      )
+      );
     }
-    
+
     return NextResponse.json(
       { error: "Internal Server Error! Please try again later." },
       { status: 500 }
-    )
+    );
   }
 }

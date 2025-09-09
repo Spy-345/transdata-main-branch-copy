@@ -1,17 +1,21 @@
-import { blogs } from '../../blog/_data'
+import { blogs } from "../../blog/_data";
 
-export const revalidate = 3600
+export const revalidate = 3600;
 
 export async function GET() {
-  const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com'
-  const items = blogs.map(p => `
+  const base = "https://www.transdatanexus.com";
+  const items = blogs
+    .map(
+      (p) => `
     <item>
       <title><![CDATA[${p.title}]]></title>
       <link>${base}/blog/${p.slug}</link>
       <description><![CDATA[${p.summary}]]></description>
       <pubDate>${new Date(p.date).toUTCString()}</pubDate>
       <guid>${base}/blog/${p.slug}</guid>
-    </item>`).join('')
+    </item>`
+    )
+    .join("");
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
   <rss version="2.0">
@@ -21,9 +25,9 @@ export async function GET() {
       <description>Latest pharmaceutical trade insights</description>
       ${items}
     </channel>
-  </rss>`
+  </rss>`;
 
-  return new Response(xml, { headers: { 'Content-Type': 'application/rss+xml; charset=utf-8' } })
+  return new Response(xml, {
+    headers: { "Content-Type": "application/rss+xml; charset=utf-8" },
+  });
 }
-
-

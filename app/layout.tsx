@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { Metadata } from "next";
+import { GoogleAnalytics } from "@next/third-parties/google";
+import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -176,6 +178,9 @@ export default function RootLayout({
           }}
         />
       </head>
+      {/* <GoogleTagManager gtmId='G-93RLLC2R1J' /> */}
+      <GoogleAnalytics gaId='G-93RLLC2R1J' />
+      <Analytics />
       <body className={`${inter.className} h-full`}>
         <div className='flex flex-col min-h-screen'>
           <Header />

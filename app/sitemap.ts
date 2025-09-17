@@ -1,26 +1,44 @@
-import { MetadataRoute } from 'next'
-import { blogs } from './blog/_data'
+import { MetadataRoute } from "next";
+import { blogs } from "./blog/_data";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com'
+  const base =
+    process.env.NEXT_PUBLIC_SITE_URL || "https://www.transdatanexus.com";
 
-  const blogIndexLastMod = mostRecentDate(blogs.map(b => b.date))
-  const siteIndexLastMod = blogIndexLastMod
+  const blogIndexLastMod = mostRecentDate(blogs.map((b) => b.date));
+  const siteIndexLastMod = blogIndexLastMod;
 
   return [
-    { url: `${base}/`, changeFrequency: 'weekly', priority: 1.0, lastModified: siteIndexLastMod },
-    { url: `${base}/blog`, changeFrequency: 'daily', priority: 0.6, lastModified: blogIndexLastMod },
-    ...blogs.map(p => ({ url: `${base}/blog/${p.slug}`, lastModified: new Date(p.date) })),
-  ]
+    {
+      url: `${base}/`,
+      changeFrequency: "weekly",
+      priority: 1.0,
+      lastModified: siteIndexLastMod,
+    },
+    {
+      url: `${base}/blog`,
+      changeFrequency: "daily",
+      priority: 0.6,
+      lastModified: blogIndexLastMod,
+    },
+    {
+      url: `${base}/services`,
+      changeFrequency: "daily",
+      priority: 0.6,
+      lastModified: blogIndexLastMod,
+    },
+    ...blogs.map((p) => ({
+      url: `${base}/blog/${p.slug}`,
+      lastModified: new Date(p.date),
+    })),
+  ];
 }
 
 function mostRecentDate(dates: string[]): Date {
-  if (!dates || dates.length === 0) return new Date()
+  if (!dates || dates.length === 0) return new Date();
   const mostRecent = dates
-    .map(d => new Date(d).getTime())
-    .filter(n => !Number.isNaN(n))
-    .reduce((a, b) => Math.max(a, b), 0)
-  return new Date(mostRecent || Date.now())
+    .map((d) => new Date(d).getTime())
+    .filter((n) => !Number.isNaN(n))
+    .reduce((a, b) => Math.max(a, b), 0);
+  return new Date(mostRecent || Date.now());
 }
-
-
